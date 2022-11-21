@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kublick/uptask/configs"
 )
 
 const version = "1.0.0"
@@ -14,6 +16,9 @@ const version = "1.0.0"
 type config struct {
 	port int
 	env  string
+	db   struct {
+		dsn string
+	}
 }
 
 type application struct {
@@ -27,6 +32,7 @@ func main() {
 
 	flag.IntVar(&cfg.port, "port", 5000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
+
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
@@ -45,6 +51,9 @@ func main() {
 	}
 	// Start the HTTP server.
 	logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
+
+	configs.ConnectDB()
+
 	err := srv.ListenAndServe()
 	logger.Fatal(err)
 }

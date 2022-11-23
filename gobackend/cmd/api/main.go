@@ -8,10 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/kublick/uptask/db"
 	"github.com/kublick/uptask/models"
-	"github.com/kublick/uptask/routes"
 )
 
 const version = "1.0.0"
@@ -50,25 +48,19 @@ func main() {
 
 	db.DB.AutoMigrate(models.Usuario{})
 
-	r := mux.NewRouter()
-
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      r,
+		Handler:      app.routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 
-	r.HandleFunc("/", routes.HomeHandler)
-
-	r.HandleFunc("/api/healthcheck", app.healthcheckHandler)
-
-	r.HandleFunc("/api/usuarios/", routes.GetUsersHandler).Methods("GET")
-	r.HandleFunc("/api/usuarios/{id}", routes.GetUserHandler).Methods("GET")
-	r.HandleFunc("/api/usuarios/", routes.CreateUserHandler).Methods("POST")
-	r.HandleFunc("/api/usuarios/{id}", routes.UpdateUserHandler).Methods("PUT")
-	r.HandleFunc("/api/usuarios/{id}", routes.DeleteUserHandler).Methods("DELETE")
+	// r.HandleFunc("/api/usuarios/", routes.GetUsersHandler).Methods("GET")
+	// r.HandleFunc("/api/usuarios/{id}", routes.GetUserHandler).Methods("GET")
+	// r.HandleFunc("/api/usuarios/", routes.CreateUserHandler).Methods("POST")
+	// r.HandleFunc("/api/usuarios/{id}", routes.UpdateUserHandler).Methods("PUT")
+	// r.HandleFunc("/api/usuarios/{id}", routes.DeleteUserHandler).Methods("DELETE")
 
 	logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
 	err := srv.ListenAndServe()

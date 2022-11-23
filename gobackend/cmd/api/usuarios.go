@@ -1,4 +1,4 @@
-package routes
+package main
 
 import (
 	"encoding/json"
@@ -9,13 +9,13 @@ import (
 	"github.com/kublick/uptask/models"
 )
 
-func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	var users []models.Usuario
 	db.DB.Find(&users)
 	json.NewEncoder(w).Encode(&users)
 }
 
-func GetUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	var user models.Usuario
 	params := mux.Vars(r)
 
@@ -31,7 +31,7 @@ func GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user models.Usuario
 	json.NewDecoder(r.Body).Decode(&user)
@@ -49,11 +49,11 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Update User"))
 }
 
-func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user models.Usuario
 	params := mux.Vars(r)

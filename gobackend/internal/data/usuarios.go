@@ -110,9 +110,40 @@ func (m UsuarioModel) Insert(user *Usuario) error {
 	return nil
 }
 
+func (m UsuarioModel) GetById(id int64) (*Usuario, error) {
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
+	query := `
+	SELECT id, created_at, nombre, email, password_hash, confirmado, version
+	FROM usuarios
+	WHERE id = $1`
+	var user Usuario
+
+	err := m.DB.QueryRow(query, id).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Nombre,
+		&user.Email,
+		&user.Password.hash,
+		&user.Confirmado,
+		&user.Version,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+	return &user, nil
+}
+
 func (m UsuarioModel) GetByEmail(email string) (*Usuario, error) {
 	query := `
-	SELECT id, created_at, name, email, password_hash, activated, version
+	SELECT id, created_at, nombre, email, password_hash, confirmado, version
 	FROM users
 	WHERE email = $1`
 	var user Usuario

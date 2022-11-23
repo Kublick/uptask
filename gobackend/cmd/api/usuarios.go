@@ -1,77 +1,62 @@
 package main
 
-// import (
-// 	"encoding/json"
-// 	"net/http"
+import (
+	"errors"
+	"net/http"
 
-// 	"github.com/kublick/uptask/db"
-// 	"github.com/kublick/uptask/internal/validator"
-// 	"github.com/kublick/uptask/models"
-// )
+	"github.com/kublick/uptask/internal/data"
+	"github.com/kublick/uptask/internal/validator"
+)
 
-// func (app *application) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
-// 	var users []models.Usuario
-// 	db.DB.Find(&users)
+func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 
-// 	err := app.writeJSON(w, http.StatusOK, envelope{"usuarios": users}, nil)
-// 	if err != nil {
-// 		app.serverErrorResponse(w, r, err)
-// 	}
-// }
+	var input struct {
+		Nombre   string `json:"nombre"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 
-// func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-// 	var user models.Usuario
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-// 	id, err := app.readIDParam(r)
-// 	if err != nil {
-// 		app.notFoundResponse(w, r)
-// 		return
-// 	}
+	user := &data.Usuario{
+		Nombre:     input.Nombre,
+		Email:      input.Email,
+		Confirmado: false,
+	}
 
-// 	db.DB.First(&user, id)
+	err = user.Password.Set(input.Password)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
-// 	if user.ID == 0 {
-// 		app.notFoundResponse(w, r)
-// 		return
-// 	}
+	v := validator.New()
 
-// 	err = app.writeJSON(w, http.StatusOK, envelope{"usuario": user}, nil)
+	if data.ValidateUser(v, user); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
 
-// 	if err != nil {
-// 		app.serverErrorResponse(w, r, err)
-// 	}
-
-// }
-
-// func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-
-// 	var user models.Usuario
-
-// 	err := app.readJSON(w, r, &user)
-// 	if err != nil {
-// 		app.badRequestResponse(w, r, err)
-// 		return
-// 	}
-
-// 	v := validator.New()
-
-// 	v.Check(user.Nombre != "", "nombre", "Este campo es Obligatorio")
-// 	v.Check(user.Password != "", "password", "Este campo es Obligatorio")
-
-// 	if !v.Valid() {
-// 		app.failedValidationResponse(w, r, v.Errors)
-// 		return
-// 	}
-
-// 	createdUser := db.DB.Create(&user)
-// 	err = createdUser.Error
-// 	if err != nil {
-// 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
-// 	}
-
-// 	json.NewEncoder(w).Encode(&user)
-
-// }
+	err = app.models.Usuarios.Insert(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrDuplicateEmail):
+			v.AddError("email", "a user with this email address already exists")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	err = app.writeJSON(w, http.StatusAccepted, envelope{"usuario": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
 
 // func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 // 	w.Write([]byte("Update User"))

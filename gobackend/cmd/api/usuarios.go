@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/kublick/uptask/db"
+	"github.com/kublick/uptask/internal/validator"
 	"github.com/kublick/uptask/models"
 )
 
@@ -14,8 +15,7 @@ func (app *application) GetUsersHandler(w http.ResponseWriter, r *http.Request) 
 
 	err := app.writeJSON(w, http.StatusOK, envelope{"usuarios": users}, nil)
 	if err != nil {
-		app.logger.Println(err)
-		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+		app.serverErrorResponse(w, r, err)
 	}
 }
 
@@ -24,23 +24,21 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := app.readIDParam(r)
 	if err != nil {
-		http.NotFound(w, r)
+		app.notFoundResponse(w, r)
 		return
 	}
 
 	db.DB.First(&user, id)
 
 	if user.ID == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Usuario no encontrado"))
+		app.notFoundResponse(w, r)
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"usuario": user}, nil)
 
 	if err != nil {
-		app.logger.Println(err)
-		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+		app.serverErrorResponse(w, r, err)
 	}
 
 }
@@ -48,15 +46,27 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user models.Usuario
-	json.NewDecoder(r.Body).Decode(&user)
+
+	err := app.readJSON(w, r, &user)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+
+	v.Check(user.Nombre != "", "nombre", "Este campo es Obligatorio")
+	v.Check(user.Password != "", "password", "Este campo es Obligatorio")
+
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
 
 	createdUser := db.DB.Create(&user)
-
-	err := createdUser.Error
-
+	err = createdUser.Error
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
 	}
 
 	json.NewEncoder(w).Encode(&user)

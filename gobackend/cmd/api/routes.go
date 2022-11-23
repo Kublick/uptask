@@ -1,12 +1,19 @@
 package main
 
-import "github.com/gorilla/mux"
+import (
+	"net/http"
+
+	"github.com/gorilla/mux"
+)
 
 func (app *application) routes() *mux.Router {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/healthcheck", app.healthcheckHandler)
+	router.NotFoundHandler = http.HandlerFunc(app.notFoundResponse)
+	router.MethodNotAllowedHandler = http.HandlerFunc(app.methodNotAllowedResponse)
+
+	router.HandleFunc("/api/healthcheck", app.healthcheckHandler).Methods("GET")
 
 	router.HandleFunc("/api/usuarios/", app.GetUsersHandler).Methods("GET")
 	router.HandleFunc("/api/usuarios/{id}", app.GetUserHandler).Methods("GET")

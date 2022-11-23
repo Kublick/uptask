@@ -1,4 +1,4 @@
-package models
+package data
 
 import (
 	"time"
@@ -8,6 +8,7 @@ import (
 
 type Usuario struct {
 	gorm.Model
+
 	ID         int64     `json:"id"`
 	Nombre     string    `gorm:"not null" json:"nombre"`
 	Password   string    `gorm:"not null" json:"-"`

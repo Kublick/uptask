@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/kublick/uptask/db"
 	"github.com/kublick/uptask/models"
 )
@@ -12,14 +11,24 @@ import (
 func (app *application) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	var users []models.Usuario
 	db.DB.Find(&users)
-	json.NewEncoder(w).Encode(&users)
+
+	err := app.writeJSON(w, http.StatusOK, envelope{"usuarios": users}, nil)
+	if err != nil {
+		app.logger.Println(err)
+		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+	}
 }
 
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	var user models.Usuario
-	params := mux.Vars(r)
 
-	db.DB.First(&user, params["id"])
+	id, err := app.readIDParam(r)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	db.DB.First(&user, id)
 
 	if user.ID == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -27,7 +36,12 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(&user)
+	err = app.writeJSON(w, http.StatusOK, envelope{"usuario": user}, nil)
+
+	if err != nil {
+		app.logger.Println(err)
+		http.Error(w, "The server encountered a problem and could not process your request", http.StatusInternalServerError)
+	}
 
 }
 
@@ -56,9 +70,13 @@ func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request
 func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user models.Usuario
-	params := mux.Vars(r)
+	id, err := app.readIDParam(r)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
 
-	db.DB.First(&user, params["id"])
+	db.DB.First(&user, id)
 	if user.ID == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Usuario no encontrado"))

@@ -4,9 +4,27 @@ import dotenv from "dotenv";
 import usuarioRoutes from "./routes/usuarioRoutes.js";
 import proyectoRoutes from "./routes/proyectoRoutes.js";
 import tareaRoutes from "./routes/tareaRoutes.js";
+import cors from "cors";
 const app = express();
 
 app.use(express.json());
+
+const whitelist = ["http://localhost:3000"];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    console.log(origin);
+    if (whitelist.includes(origin)) {
+      // Puede consultar api
+      callback(null, true);
+    } else {
+      // No puede consultar api
+      callback(new Error("No permitido por CORS"));
+    }
+  },
+};
+
+app.use(cors(corsOptions));
 
 dotenv.config();
 

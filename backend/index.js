@@ -8,12 +8,11 @@ import cors from "cors";
 const app = express();
 
 app.use(express.json());
-
+dotenv.config();
 const whitelist = ["http://localhost:3000"];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    console.log(origin);
     if (whitelist.includes(origin)) {
       // Puede consultar api
       callback(null, true);
@@ -25,8 +24,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-dotenv.config();
 
 conectarDB();
 

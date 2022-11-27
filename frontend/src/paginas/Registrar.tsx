@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import Alerta from "../components/alerta";
 import axios from "axios";
+import { api } from "../lib/axios";
+import Alerta from "../components/Alerta";
 
 type AlertaProps = {
   msg: string;
@@ -42,6 +43,7 @@ const Registrar = () => {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<CrearCuentaProps>({
     defaultValues: {
       nombre: "",
@@ -55,12 +57,9 @@ const Registrar = () => {
 
   const onSubmit = async (formData: CrearCuentaProps) => {
     try {
-      const { data } = await axios.post(
-        "http://localhost:4000/api/usuarios",
-        formData
-      );
-
+      const { data } = await api.post("/usuarios", formData);
       setAlerta({ msg: data.message, error: false });
+      reset();
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
         setAlerta({ msg: err.response.data.message, error: true });

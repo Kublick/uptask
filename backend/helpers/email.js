@@ -32,13 +32,21 @@ export const emailOlvidePassword = async (datos) => {
   const { nombre, email, token } = datos;
 
   const transport = nodemailer.createTransport({
-    host: "smtp.mailtrap.io",
-    port: 2525,
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
     auth: {
-      user: "4a18885f722562",
-      pass: "42685c3fbecd6b",
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
+  // const transport = nodemailer.createTransport({
+  //   host: "smtp.mailtrap.io",
+  //   port: 2525,
+  //   auth: {
+  //     user: "4a18885f722562",
+  //     pass: "42685c3fbecd6b",
+  //   },
+  // });
 
   // Informacion del email
 
